@@ -94,7 +94,7 @@ class UpdateConfig:
 
     def update_records(self, original_marg, marg_key, iteration):
         marg = copy.deepcopy(original_marg)
-        self.update.update_records_before(marg, marg_key, iteration)
+        self.update.update_records_before(marg, marg_key, iteration, mute=True)
 
         self.update.update_records_main(marg, self.alpha)
         self.update.determine_throw_indices()
@@ -125,4 +125,4 @@ class UpdateConfig:
         else:
             raise Exception("invalid update method")
 
-        self.update.update_records_after(marg, marg_key, iteration)
+        self.update.update_records_after(marg, marg_key, iteration, mute=True)

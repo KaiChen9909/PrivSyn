@@ -206,7 +206,7 @@ class RecordUpdate:
         if not mute:
             self.logger.info("the l1 error before updating is %s" % (l1_error,))
 
-    def update_records_after(self, marg, marg_key, iteration):
+    def update_records_after(self, marg, marg_key, iteration, mute=False):
         self.synthesize_marginal = self.synthesize_marginal_distribution(marg)
         
         l1_error = self._l1_distance(self.actual_marginal, self.synthesize_marginal)
@@ -219,7 +219,8 @@ class RecordUpdate:
 
         self.error_tracker.loc[[marg_key], "%s-after" % (iteration,)] = l1_error
         
-        self.logger.info("the l1 error after updating is %s" % (l1_error,))
+        if not mute:
+            self.logger.info("the l1 error after updating is %s" % (l1_error,))
         
         # if iteration == 0:
         #     self.logger.info("shuffling records")

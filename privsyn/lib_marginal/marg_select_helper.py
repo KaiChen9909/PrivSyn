@@ -8,12 +8,12 @@ import logging
 import pickle
 import copy
 import math
-import tqdm
 import numpy as np
 import pandas as pd
 import itertools
 
 from privsyn.lib_marginal.marg import Marginal
+from tqdm import tqdm
 import privsyn.config as config
 
 
@@ -52,8 +52,8 @@ def calculate_indif(logger, dataset, dataset_name, rho):
     indif_df = pd.DataFrame(
         columns=["first_attr", "second_attr", "num_cells", "error"])
     workloads = list(itertools.combinations(dataset.domain, 2))
-    
-    for (first_attr, second_attr) in tqdm(workloads):
+
+    for first_attr, second_attr in tqdm(workloads, desc='Calculating Indif'):
         two_way = dataset.project((first_attr, second_attr)).datavector(flatten=False)
         indep_two_way = np.outer(
             dataset.project((first_attr, )).datavector(flatten=False),

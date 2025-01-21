@@ -4,6 +4,7 @@ import logging
 import math
 
 from functools import reduce
+from tqdm import tqdm
 from privsyn.lib_synthesize.converge_imp import sep_graph, clip_graph, append_attrs
 from privsyn.lib_synthesize.update_config import UpdateConfig
 from privsyn.lib_dataset.dataset import Dataset
@@ -73,6 +74,7 @@ class GUM_Mechanism():
 
     def synthesize_records(self, n_sample):
         self.args['num_synthesize_records'] = n_sample
+        self.logger.info("updating data")
 
         temp_synthesized_df = pd.DataFrame(data=np.zeros([self.args['num_synthesize_records'], self.original_dataset.df.shape[1]], dtype=np.uint32),
                                         columns=self.original_dataset.domain.attrs)
@@ -80,16 +82,14 @@ class GUM_Mechanism():
         
         # main procedure for synthesizing records
         for key, value in self.iterate_keys.items():
-            self.logger.info("synthesizing for %s" % (key,))
-
             synthesizer = self._update_records(value)
             temp_synthesized_df.loc[:, key] = synthesizer.update.df.loc[:, key]
 
-            #ZL: error because of old append is deprecated
-            #self.error_tracker = self.error_tracker.append(synthesizer.update.error_tracker)
             self.error_tracker = pd.concat([self.error_tracker, synthesizer.update.error_tracker])
 
+        self.logger.info("updated data")
         self.synthesized_df = temp_synthesized_df.copy(deep=True)
+
 
     def _update_records(self, margs_iterate_key):
         update_config = {
@@ -106,15 +106,11 @@ class GUM_Mechanism():
         synthesizer.update.initialize_records(margs_iterate_key, method=self.args['initialize_method'], singletons=singletons)
 
         for update_iteration in range(self.args['update_iterations']):
-            # self.logger.info("update round: %d" % (update_iteration,))
-
             synthesizer.update_alpha(update_iteration)
             margs_iterate_key = synthesizer.update_order(update_iteration, self.marg_dict, margs_iterate_key)
 
             for index, key in enumerate(margs_iterate_key):
                 synthesizer.update_records(self.marg_dict[key], key, update_iteration)
-
-                # self.logger.info("updating %s marg: %s, num_key: %s" % (index, key, self.marg_dict[key].num_key))
 
         return synthesizer
 

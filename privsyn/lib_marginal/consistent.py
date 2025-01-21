@@ -122,7 +122,6 @@ class Consistenter:
         iterations = 0
 
         while non_negativity and iterations < self.iterations:
-            self.logger.info("consist for round %s" % (iterations,))
 
             # first make sure summation are the same
             consist_on_subset(set(), [marg for _, marg in self.margs.items()])
