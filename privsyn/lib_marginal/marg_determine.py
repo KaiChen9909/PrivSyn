@@ -28,28 +28,21 @@ def marginal_selection(dataset, select_args):
     '''
     logger = logging.getLogger('choosing pairs')
         
-    df = copy.deepcopy(dataset.df)
-    dataset_domain = copy.deepcopy(dataset.domain)
-    dataset_max_values = copy.deepcopy(dataset.domain)
     dataset_name = select_args['dataset_name']
     
     #obtaining indif(if needed)
     if select_args['is_cal_depend'] is True:
-
-        df = transform_records_distinct_value(logger, df, dataset_domain)
-
-        calculate_indif(logger, df, dataset_domain, dataset_max_values, dataset_name, select_args['indif_rho'])
-    indif_df = pickle.load(open(config.DEPENDENCY_PATH + dataset_name, "rb"))
+        # df = transform_records_distinct_value(logger, df, dataset_domain)
+        indif_df = calculate_indif(logger, dataset, dataset_name, select_args['indif_rho'])
+    else:
+        indif_df = pickle.load(open(config.DEPENDENCY_PATH + dataset_name, "rb"))
     
     #################################### main procedure of algorithm 1 #########################################
     gap = 1e10
     marginals = []
     selected_attrs = set()
 
-    error = indif_df["error"].to_numpy() * df.shape[0]
-    # error = self.dependency_df["error"].to_numpy()
-    # ZL: np.float deprecated
-    # num_cells = self.dependency_df["num_cells"].to_numpy().astype(np.float)
+    error = indif_df["error"].to_numpy() * dataset.df.shape[0]
     num_cells = indif_df["num_cells"].to_numpy().astype(np.float64)
     overall_error = np.sum(error)
     selected = set()
@@ -92,11 +85,11 @@ def marginal_selection(dataset, select_args):
         marginals.append((first_attr, second_attr))
         selected_attrs.update((first_attr, second_attr))
 
-        logger.info("select %s marginal: %s | gap: %s" %(len(marginals), (first_attr, second_attr), gap))
+        # logger.info("select %s marginal: %s | gap: %s" %(len(marginals), (first_attr, second_attr), gap))
     ##########################################################################################################
         
     #handle_isolated_attrs
-    marginals = handle_isolated_attrs(dataset_domain, selected_attrs, indif_df, marginals, method="connect", sort=True)
+    marginals = handle_isolated_attrs(dataset.domain, selected_attrs, indif_df, marginals, method="connect", sort=True)
 
     logger.info('marginals after selection: %s' % (marginals, ))
     

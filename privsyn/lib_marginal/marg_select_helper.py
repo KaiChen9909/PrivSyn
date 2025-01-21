@@ -8,21 +8,22 @@ import logging
 import pickle
 import copy
 import math
-
+import tqdm
 import numpy as np
 import pandas as pd
+import itertools
 
 from privsyn.lib_marginal.marg import Marginal
 import privsyn.config as config
 
+
 def transform_records_distinct_value(logger, df, dataset_domain):
     '''
-
     Replaces the attribute value with the index of the unique value on that attribute.
     Fix the domain size at the same time.
     
-    It's vital for marginal caculation to function normally.
-
+    In our preprocessing step, this has already been done by ordinal encoding. 
+    Therefore, you do not need to apply this function before opeartion
     '''
     logger.info("transforming records")
 
@@ -45,51 +46,24 @@ def transform_records_distinct_value(logger, df, dataset_domain):
     return df
 
 
-def calculate_indif(logger, df, dataset_domain, original_domain, dataset_name, rho):
+def calculate_indif(logger, dataset, dataset_name, rho):
     logger.info("calculating pair indif")
 
     indif_df = pd.DataFrame(
         columns=["first_attr", "second_attr", "num_cells", "error"])
-    indif_index = 0
 
-    for first_index, first_attr in enumerate(dataset_domain.attrs[:-1]): #2-ways margin到倒数第二个即可
-        first_marg = Marginal(dataset_domain.project(
-            first_attr), dataset_domain) # first one-way marginal
-        first_marg.count_records(df.values)
-        first_histogram = first_marg.calculate_normalize_count()
+    workloads = list(itertools.combinations(dataset.domain, 2))
+    for (first_attr, second_attr) in tqdm(workloads):
+        two_way = dataset.project((first_attr, second_attr)).datavector(flatten=False)
+        indep_two_way = np.outer(
+            dataset.project((first_attr, )).datavector(flatten=False),
+            dataset.project((second_attr, )).datavector(flatten=False)
+        )/two_way.sum()
 
-        for second_attr in dataset_domain.attrs[first_index + 1:]:
-            logger.info("calculating [%s, %s]" %
-                             (first_attr, second_attr))
+        error = np.sum(np.abs(two_way - indep_two_way))
 
-            second_marg = Marginal(dataset_domain.project(
-                second_attr), dataset_domain) # second one-way marginal
-            second_marg.count_records(df.values)
-            second_histogram = second_marg.calculate_normalize_count()
-
-            # calculate real 2-way marginal
-            pair_marg = Marginal(dataset_domain.project(
-                (first_attr, second_attr)), dataset_domain)
-            pair_marg.count_records(df.values)
-            pair_marg.calculate_count_matrix()
-            # pair_distribution = pair_marg.calculate_normalize_count()
-
-            # calculate 2-way marginal assuming independent
-            independent_pair_distribution = np.outer(
-                first_histogram, second_histogram)
-
-            # calculate the errors
-            normalize_pair_marg_count = pair_marg.count_matrix / \
-                np.sum(pair_marg.count_matrix)
-            error = np.sum(np.absolute(
-                normalize_pair_marg_count - independent_pair_distribution))
-
-            num_cells = original_domain.config[first_attr] * \
-                original_domain.config[second_attr]
-            indif_df.loc[indif_index] = [
-                first_attr, second_attr, num_cells, error]
-
-            indif_index += 1
+        num_cells = dataset.domain.project(first_attr).shape[0] * dataset.domain.project(second_attr).shape[0]
+        indif_df.loc[len(indif_df)] = [first_attr, second_attr, num_cells, error]
 
     # add noise
     if rho != 0.0:
@@ -101,6 +75,9 @@ def calculate_indif(logger, df, dataset_domain, original_domain, dataset_name, r
         config.DEPENDENCY_PATH + dataset_name, "wb"))
 
     logger.info("calculated pair indif")
+    return indif_df
+
+
 
 def handle_isolated_attrs(dataset_domain, selected_attrs, indif_df, marginals, method="isolate", sort=False):
     # find attrs that does not appear in any of the pairwise marginals
