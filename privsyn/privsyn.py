@@ -47,7 +47,7 @@ class PrivSyn():
         self.one_way_marg_dict  = {} # save one-way marginals
         self.combined_marg_dict  = {} # save multi-way marginals
         
-        self.privacy_budget_allocation()
+        self.privacy_budget_allocation() # allocate rho to each steps
 
         
 
@@ -68,7 +68,7 @@ class PrivSyn():
     def syn(self, n_sample, preprocesser, parent_dir, **kwargs):
         '''
         This method is the main synthesis process of PrivSyn:
-            1. initialize a GUM class, this requires: 
+            1. initialize a GUM class, requiring: 
                 dataset (in Dataset class)
                 dictionary of multi-way marginals {(attr1, attr2): Marginal, (attr2, attr3): Marginal, ...} 
                 dictionary of one-way marginals {(attr1,): Marginal, (attr2,): Marginal, ...}
