@@ -93,7 +93,7 @@ def marginal_selection(dataset, select_args):
 
     logger.info('marginals after selection: %s' % (marginals, ))
     
-    return marginals #这里返回的是attr
+    return marginals 
 
 
 def marginal_combine(dataset, select_args, marginals):

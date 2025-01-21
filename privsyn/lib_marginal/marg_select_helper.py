@@ -51,8 +51,8 @@ def calculate_indif(logger, dataset, dataset_name, rho):
 
     indif_df = pd.DataFrame(
         columns=["first_attr", "second_attr", "num_cells", "error"])
-
     workloads = list(itertools.combinations(dataset.domain, 2))
+    
     for (first_attr, second_attr) in tqdm(workloads):
         two_way = dataset.project((first_attr, second_attr)).datavector(flatten=False)
         indep_two_way = np.outer(
