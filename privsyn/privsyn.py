@@ -60,8 +60,8 @@ class PrivSyn():
                measure and introduce DP noise to all measured marginals
         '''
         self.sel_marg_name = self.select_and_combine_marginals(self.original_dataset)
-        self.construct_margs(mode = 'one_way') 
-        self.construct_margs(mode = 'combined')
+        self.one_way_marg_dict = self.construct_margs(mode = 'one_way') 
+        self.combined_marg_dict = self.construct_margs(mode = 'combined')
 
     
 
@@ -143,28 +143,36 @@ class PrivSyn():
     def construct_margs(self, mode):
         if mode == 'one_way':
             self.logger.info("constructing one-way marginals")
+
+            one_way_marg_dict = {}
             rho = self.one_way_marginal_rho / len(self.original_dataset.domain.attrs)
             self.gauss_sigma_4_one_way = math.sqrt(self.args['marg_add_sensitivity'] ** 2 / (2.0 * rho))
 
             for attr in self.original_dataset.domain.attrs:
                 marg = self.construct_marg(self.original_dataset, (attr,))
                 self.anonymize_marg(marg, rho)
-                self.one_way_marg_dict[(attr,)] = marg
+                one_way_marg_dict[(attr,)] = marg
+            
+            return one_way_marg_dict
         
         elif mode == 'combined':
             self.logger.info("constructing combined marginals")
 
             divider = 0.0
+            combined_marg_dict = {}
             rho = self.combined_marginal_rho
+
             for i, marginal in enumerate(self.sel_marg_name):
                 self.logger.debug('%s th marginal' % (i,))
-                self.combined_marg_dict[marginal] = self.construct_marg(self.original_dataset, marginal)
+                combined_marg_dict[marginal] = self.construct_marg(self.original_dataset, marginal)
 
-            for key, marg in self.combined_marg_dict.items():
+            for key, marg in combined_marg_dict.items():
                 divider += math.pow(marg.num_key, 2.0 / 3.0)
-            for key, marg in self.combined_marg_dict.items():
+            for key, marg in combined_marg_dict.items():
                 marg.rho = rho * math.pow(marg.num_key, 2.0 / 3.0) / divider
                 self.anonymize_marg(marg, rho=marg.rho)
+            
+            return combined_marg_dict
             
 
     def postprocessing(self, preprocesser, save_path = None):
