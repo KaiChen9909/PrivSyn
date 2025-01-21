@@ -124,10 +124,6 @@ class PrivSyn():
 
     
     def construct_marg(self, dataset, marginal):
-        # num_keys = self.original_dataset.project(marginal).datavector
-        num_keys = reduce(lambda x, y: x * y, [dataset.domain.config[m] for m in marginal])
-        self.logger.info("constructing %s margs, num_keys: %s" % (marginal, num_keys))
-
         marg = Marginal(dataset.domain.project(marginal), dataset.domain)
         marg.count_records(dataset.df.values)
         
@@ -153,6 +149,7 @@ class PrivSyn():
                 self.anonymize_marg(marg, rho)
                 one_way_marg_dict[(attr,)] = marg
             
+            self.logger.info("constructed one-way marginals")
             return one_way_marg_dict
         
         elif mode == 'combined':
@@ -172,6 +169,7 @@ class PrivSyn():
                 marg.rho = rho * math.pow(marg.num_key, 2.0 / 3.0) / divider
                 self.anonymize_marg(marg, rho=marg.rho)
             
+            self.logger.info("constructed combined marginals")
             return combined_marg_dict
             
 
