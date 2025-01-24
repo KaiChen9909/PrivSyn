@@ -32,25 +32,45 @@ Firstly, make sure the datasets are put in the correct fold (in the following ex
 python evaluator/tune_eval_model.py bank mlp cv cuda:0
 ```
 
-After preparation, we can try the following code to make an overall evaluation. Usually, we by default set `num_preprocess` to be "uniform_kbins" except for DP-MERF and TabDDPM, and set `rare_threshold` to 0.002 for overall evaluation. Therefore, if you do not want to change these settings, you do not need to deliver the values in your command line.
+After preparation, we can try the following code to make an overall evaluation. Usually, we by default set `num_preprocess` to be "uniform_kbins" except for DP-MERF and TabDDPM, and set `rare_threshold` to 0.002 for overall evaluation. Therefore, if you do not want to change these settings, you do not need to include these hyper-parameters in your command line.
 ```
 python main.py privsyn bank cuda:0 1.0
 ```
 
-### PrivSyn Modules
-Except for an overall implementation of PrivSyn, this repository also offers the modularized api of PrivSyn, which are `InDif selection` and `GUM`. 
+## PrivSyn Modules
+Except for an overall implementation of PrivSyn, this repository also offers the modularized API of PrivSyn, which are `InDif selection` and `GUM`. 
 
-* `InDif selection`: This is a method for marginal selection by measuring InDif. We implement it as a static method in `PrivSyn` class, called `two_way_marginal_selection` (see `privsyn/privsyn.py`). This method will return a list of 2-way marginal tuple, as the final selection. The hypermeters of this method can be summarized as 
-    * `df`: a dataframe of dataset
-    * `domain`: a dictionary of attributes domain
-    * `rho_indif`: privacy budget for measuring InDif
-    * `rho_measure`: privacy budget for measuring selected marginals (this budget will not be used in this phase, but works as an optimization term during selection)
+### InDif selection
+This is a method for marginal selection by measuring InDif. We implement it as a static method in `PrivSyn` class, called `two_way_marginal_selection` (see `privsyn/privsyn.py`). This method will return a list of 2-way marginal tuple, as the final selection. The hypermeters of this method can be summarized as 
+* `df`: a dataframe of dataset
+* `domain`: a dictionary of attributes domain
+* `rho_indif`: privacy budget for measuring InDif
+* `rho_measure`: privacy budget for measuring selected marginals (this budget will not be used in this phase, but works as an optimization term during selection)
 
-* `GUM`: We construct a class of GUM synthesis method called `GUM_Mechanisms` (see `privsyn/lib_synthesize/GUM.py`). Here is a instruction of using this closed-form synthesis module.
-    * `Initialization`. The initialization of GUM requires an input of hyperparameters (same as PrivSyn), dataset (Dataset class), a dictionary of 1-way marginals (used for data initialization, can be an empty dictionary), a dictionary of 2-way marginals. The dictionary of marginals should be in the form of 
+### GUM
+We construct a class of GUM synthesis method called `GUM_Mechanisms` (see `privsyn/lib_synthesize/GUM.py`). Here is a instruction of using this closed-form synthesis module.
+* `Initialization`. The initialization of GUM requires an input of hyperparameters dictionary (same as PrivSyn), dataset (Dataset class), a dictionary of 1-way marginals (used for data initialization, can be an empty dictionary), a dictionary of 2-way marginals. The dictionary of marginals should be in the form of:
+
     ```
     {'(attr1, attr2)': Marginal1, '(attr3, attr4)': Marginal2, ...}
     ```
-        Here `Marginal1` and `Marginal2` should be in Marginal class (see `privsyn/lib_marginal/marg.py`). 
-    
-    * 
+
+    Here `Marginal1` and `Marginal2` should be in Marginal class (see `privsyn/lib_marginal/marg.py`), and measured by method `count_records`. You can initialize a GUM class like 
+
+    ```
+    model = GUM_Mechanism(args, df, dict1, dict2)
+    ```
+
+* `Main procedure`. The main procedure of GUM is finished by method `run`, which only requires the sampling number. This process includes three main steps: graph seperation, marginal consistency, and records updation. 
+    ```
+    model.run(n_sample = 10000)
+    synthesized_df = model.synthesized_df
+    ```
+
+* `Adaptive mechanism`. We also support measurement for synthesized dataset, which can be used for adaptive marginal selection. 
+    ```
+    syn_vector = model.project(('attr1', 'attr2')).datavector()
+    real_vector = dataset.project(('attr1', 'attr2')).datavector()
+    gap = np.linalg.norm(syn_vector - real_vector, ord=1)
+    ```
+     

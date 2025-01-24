@@ -16,6 +16,8 @@ from privsyn.lib_marginal.marg import Marginal
 class GUM_Mechanism():
     def __init__(self, args, dataset, combined_marg_dict, one_way_marg_dict):
         self.args = args
+        self.check_args()
+
         self.original_dataset = dataset 
         self.synthesized_df = None
 
@@ -37,6 +39,17 @@ class GUM_Mechanism():
 
 
     ########################################### helper functions #########################################
+    def check_args(self):
+        self.args.setdefault('consist_iterations', 501)
+        self.args.setdefault('non_negativity', 'N3')
+        self.args.setdefault('append', True)
+        self.args.setdefault('sep_syn', False)
+        self.args.setdefault('initialize_method', 'singleton')
+        self.args.setdefault('update_method', 'S5')
+        self.args.setdefault('update_rate_method', 'U4')
+        self.args.setdefault('update_rate_initial', 1.0)
+        self.args.setdefault('update_iterations', 50)
+
 
     def update_selected_marginals(self, combined_marg_dict, one_way_marg_dict=None):
         self.sel_marg_name = list(combined_marg_dict.keys())
