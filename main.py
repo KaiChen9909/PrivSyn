@@ -8,7 +8,7 @@ import time
 from copy import deepcopy
 from typing import Union
 from util.util import * 
-from preprocess_common.load_data_common import data_preporcesser_common
+from preprocess_common.load_data_common import data_preprocesser_common
 from util.rho_cdp import cdp_rho
 from evaluator.eval_seeds import eval_seeds
 from evaluator.eval_sample import eval_sampler
@@ -45,17 +45,17 @@ def main(args):
     # data preprocess
     if args.method == 'ddpm':
         total_rho = 1.0 # not used, set to 1.0 to calculate preprocesser_divide
-        data_preporcesser = data_preporcesser_common(args)
-        df, domain, preprocesser_divide  = data_preporcesser.load_data(data_path, 0)
+        data_preprocesser = data_preprocesser_common(args)
+        df, domain, preprocesser_divide  = data_preprocesser.load_data(data_path, 0)
     else:
         total_rho = cdp_rho(args.epsilon, args.delta)
-        data_preporcesser = data_preporcesser_common(args)
-        df, domain, preprocesser_divide  = data_preporcesser.load_data(data_path, total_rho) 
+        data_preprocesser = data_preprocesser_common(args)
+        df, domain, preprocesser_divide  = data_preprocesser.load_data(data_path, total_rho) 
     
 
     # fitting model
     start_time = time.time()
-    generator_dict = algo_method(args)(args, df=df, domain=domain, rho=(1-preprocesser_divide)*total_rho, parent_dir=parent_dir, preprocesser = data_preporcesser)
+    generator_dict = algo_method(args)(args, df=df, domain=domain, rho=(1-preprocesser_divide)*total_rho, parent_dir=parent_dir, preprocesser = data_preprocesser)
     end_time = time.time()
     time_record['model fitting time'] = end_time-start_time
 
@@ -66,14 +66,14 @@ def main(args):
     if args.syn_test:
         test_config = deepcopy(eval_config)
         test_config['sample']['sample_num'] = 5000
-        eval_sampler(args.method, test_config, args.sample_device, data_preporcesser, **generator_dict)
+        eval_sampler(args.method, test_config, args.sample_device, data_preprocesser, **generator_dict)
     
     if not args.test or not args.syn_test:
         eval_seeds(
             eval_config, 
             sampling_method = args.method,
             device = args.sample_device,
-            preprocesser = data_preporcesser,
+            preprocesser = data_preprocesser,
             time_record = time_record,
             **generator_dict
         ) 

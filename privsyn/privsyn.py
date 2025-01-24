@@ -32,6 +32,14 @@ from functools import reduce
 
 class PrivSyn():
     def __init__(self, args, df, domain, rho):
+        '''
+        Initialize the PrivSyn class, requiring:
+            1. args: a dict of hyper-parameters
+            2. df: a dataframe
+            3. domain: a dict of attributes domain
+            4. rho: total rho for PrivSyn. 
+               The rho of each modules will be allocated based on the total rho, which is achieved by `privacy_budget_allocation`.
+        '''
 
         self.logger = logging.getLogger('PrivSyn')        
         self.args = args
@@ -183,10 +191,10 @@ class PrivSyn():
     # This function extract the process of two-way marginal selection, which can be used for other synthesize methods
 
     @staticmethod
-    def two_way_marginal_selection(df, domain, rho, rho1):
+    def two_way_marginal_selection(df, domain, rho_indif, rho_measure):
         args = {}
-        args['indif_rho'] = rho
-        args['combined_marginal_rho'] = rho1 # don't used in this phase, just as a penalty term
+        args['indif_rho'] = rho_indif
+        args['combined_marginal_rho'] = rho_measure # don't used in this phase, just as a penalty term
         args['dataset_name'] = 'temp_data'
         args['is_cal_depend'] = True
         args['marg_sel_threshold'] = 20000
