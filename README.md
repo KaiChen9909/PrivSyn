@@ -45,7 +45,12 @@ This is a method for marginal selection by measuring InDif. We implement it as a
 * `df`: a dataframe of dataset
 * `domain`: a dictionary of attributes domain
 * `rho_indif`: privacy budget for measuring InDif
-* `rho_measure`: privacy budget for measuring selected marginals (this budget will not be used in this phase, but works as an optimization term during selection)
+* `rho_measure`: privacy budget for measuring selected marginals (actually this budget will not be used in this phase, but works as an optimization term during selection)
+
+You can use this static method to select marginals for other synthesis modules
+```
+selected_marginals = PrivSyn.two_way_marginal_selection(df, domain, rho_indif, rho_measure)
+```
 
 ### GUM
 We construct a class of GUM synthesis method called `GUM_Mechanisms` (see `privsyn/lib_synthesize/GUM.py`). Here is a instruction of using this closed-form synthesis module.
